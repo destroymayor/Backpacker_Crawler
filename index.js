@@ -1,22 +1,22 @@
-import { exportResults, writeFileAsync } from "./src/fs_function";
-import { asyncForEach, waitFor } from "./src/delay";
 import cheerio from "cheerio";
-const superagent = require("superagent");
+import superagent from "superagent";
 require("superagent-proxy")(superagent);
+
+import { exportResults, writeFileAsync } from "./src/fs_process";
+import { asyncForEach, waitFor } from "./src/delay";
 
 const proxy_url = "219.85.183.27:8080";
 const proxy = `http://${proxy_url}`;
 
 const getWebSiteContent = async (url, forumCode, page, outputPath) => {
   const pageLinkList = [];
-
   const getWebSitePageUrl = async () => {
     try {
-      const RequestHTML = await superagent.get(url);
+      const RequestHTML = await superagent.get(url).timeout(200000);
       const $ = cheerio.load(RequestHTML.text);
-      const forum_num = "threadbits_forum_" + forumCode;
+      const forum_num = `#threadbits_forum_${forumCode}`;
 
-      $(`#${forum_num} > tr > td:nth-child(2) > div > a`).each((index, value) => {
+      $(`${forum_num} > tr > td:nth-child(2) > div > a`).each((index, value) => {
         pageLinkList.push({ link: `https://www.backpackers.com.tw/forum/${$(value).attr("href")}`, page });
       });
     } catch (error) {
@@ -27,13 +27,13 @@ const getWebSiteContent = async (url, forumCode, page, outputPath) => {
   const RequestDataAsync = async (url, page) => {
     const crawlerResultList = [];
     try {
-      const RequestHTML = await superagent.get(url);
+      const RequestHTML = await superagent.get(url).timeout(200000);
       const $ = cheerio.load(RequestHTML.text);
 
-      const title = $(
-        "div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td > div:nth-child(2) > strong"
-      ).text();
-      const content = $("div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td > .vb_postbit").text();
+      const table_td = `div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td`;
+
+      const title = $(`${table_td} > div:nth-child(2) > strong`).text();
+      const content = $(`${table_td} > .vb_postbit`).text();
 
       await crawlerResultList.push({
         article_title: title.replace(new RegExp("\n", "g"), ""),
@@ -67,7 +67,7 @@ const startCrawler = async (forum, totalCode) => {
   writeFileAsync(outputPath, []);
 
   const list = [];
-  for (let i = 18; i <= totalCode; i++) list.push(i);
+  for (let i = 1; i <= totalCode; i++) list.push(i);
 
   await asyncForEach(list, async num => {
     await getWebSiteContent(
