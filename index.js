@@ -1,11 +1,9 @@
 import cheerio from "cheerio";
 import superagent from "superagent";
-require("superagent-proxy")(superagent);
 
 import { exportResults, writeFileAsync } from "./src/fs_process";
 import { asyncForEach, waitFor } from "./src/delay";
 
-const proxy = `http://182.53.201.175:80`;
 const headerConfig = {
   "Content-Type": "text/plain",
   "User-Agent":
@@ -26,6 +24,8 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
       $(`${forum_num} > tr > td:nth-child(2) > div > a`).each((index, value) => {
         pageLinkList.push({ link: `https://www.backpackers.com.tw/forum/${$(value).attr("href")}`, page });
       });
+
+      return pageLinkList;
     } catch (error) {
       console.log("TCL: getWebSitePageUrl -> error", error);
     }
@@ -59,21 +59,20 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
 
   Promise.resolve()
     .then(() => getWebSitePageUrl())
-    .then(() =>
+    .then(() => {
       Promise.all(
         pageLinkList.map(async item => {
           await RequestDataAsync(item.link, item.page);
           return item.page;
         })
-      )
-    )
-    .then(page => console.log("第", page[0], "頁 total =", totalCode, "Time:", new Date().toTimeString().split(" ")[0]))
+      );
+    })
+    .then(page => console.log("第", page, "頁 total =", totalCode, "Time:", new Date().toTimeString().split(" ")[0]))
     .catch(err => console.log("Promise.resolve", err));
 };
 
 const startCrawler = async (forum, startPage, totalCode) => {
   const outputPath = `./output/${forum}_${Math.floor(Math.random() * (99 - 10 + 1)) + 10}.json`;
-  //const outputPath = `./output/${forum}.json`;
   writeFileAsync(outputPath, []);
 
   const list = [];
