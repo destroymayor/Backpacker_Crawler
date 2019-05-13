@@ -6,34 +6,20 @@ import { exportResults, writeFileAsync } from "./src/fs_process";
 import { asyncForEach, waitFor } from "./src/delay";
 
 const proxy = `http://182.53.201.175:80`;
-
-//
-//
-// http://180.183.133.160:8080
-// http://185.25.21.50:8080
-// http://79.170.192.143:60724
-// http://101.109.255.18:59873
-// http://31.41.175.84:59860
-// http://195.201.23.192:3128
-// http://118.97.36.18:8080
-// http://212.232.6.15:53281
-// http://107.0.141.230:3128
-// http://94.244.191.219:3128
-// http://171.5.29.77:8080
-// http://213.160.150.239:47596
-// http://212.72.138.155:43757
-// http://118.175.93.98:55175
-// http://5.104.23.74:58795
-// http://95.77.16.197:34669
-// http://188.214.232.2:8080
-// http://41.89.162.8:32122
-// http://94.74.140.8:8080
+const headerConfig = {
+  "Content-Type": "text/plain",
+  "User-Agent":
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
+};
 
 const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) => {
   const pageLinkList = [];
   const getWebSitePageUrl = async () => {
     try {
-      const RequestHTML = await superagent.get(url).timeout(5000);
+      const RequestHTML = await superagent
+        .get(url)
+        .set(headerConfig)
+        .timeout(5000);
       const $ = cheerio.load(RequestHTML.text);
       const forum_num = `#threadbits_forum_${forumCode}`;
 
@@ -48,7 +34,10 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
   const RequestDataAsync = async (url, page) => {
     const crawlerResultList = [];
     try {
-      const RequestHTML = await superagent.get(url).timeout(5000);
+      const RequestHTML = await superagent
+        .get(url)
+        .set(headerConfig)
+        .timeout(5000);
       const $ = cheerio.load(RequestHTML.text);
 
       const table_td = `div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td`;
@@ -102,4 +91,4 @@ const startCrawler = async (forum, startPage, totalCode) => {
   });
 };
 
-startCrawler(116, 37, 369);
+startCrawler(116, 51, 369);
