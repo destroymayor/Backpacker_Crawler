@@ -1,5 +1,6 @@
 import cheerio from "cheerio";
 import superagent from "superagent";
+require("superagent-proxy")(superagent);
 
 import { exportResults, writeFileAsync } from "./src/fs_process";
 import { asyncForEach, waitFor } from "./src/delay";
@@ -105,9 +106,8 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
           await RequestDataAsync(item.link, item.page);
           return item.page;
         })
-      );
+      ).then(page => console.log("第", page[0], "頁 total =", totalCode, "Time:", new Date().toTimeString().split(" ")[0]));
     })
-    .then(page => console.log("第", page, "頁 total =", totalCode, "Time:", new Date().toTimeString().split(" ")[0]))
     .catch(err => console.log("Promise.resolve", err));
 };
 
