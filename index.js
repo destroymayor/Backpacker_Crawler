@@ -4,12 +4,49 @@ require("superagent-proxy")(superagent);
 
 import { exportResults, writeFileAsync } from "./src/fs_process";
 import { asyncForEach, waitFor } from "./src/delay";
+import userAgents from "./src/userAgents";
 
-const proxy = `http://182.53.201.175:80`;
+const proxy = "http://180.183.96.150:8213";
+
+//
+// http://138.197.167.88:8080
+// http://47.90.202.224:3128
+// http://142.93.145.229:3128
+// http://104.248.112.25:8080
+// http://92.222.25.82:3128
+// http://103.43.203.225:53281
+// http://1.179.148.9:36656
+// http://1.20.97.166:33587
+// http://217.30.73.152:32368
+// http://1.20.96.111:45555
+// http://112.78.152.98:52377
+// http://201.48.194.210:80
+// http://41.169.15.99:48733
+// http://81.24.88.136:41258
+// http://125.27.10.245:43800
+// http://187.163.36.54:59753
+// http://103.9.124.210:8080
+// http://185.85.116.61:8080
+// http://185.85.117.109:8080
+// http://185.85.116.71:8080
+// http://185.85.116.90:8080
+// http://185.85.116.33:8080
+// http://185.85.116.9:8080
+// http://103.65.193.195:52115
+// http://103.9.190.206:44245
+// http://103.233.123.177:8080
+// http://195.24.154.3:51749
+// http://37.221.157.98:43570
+// http://181.10.238.7:58738
+// http://109.248.249.37:8081
+// http://182.93.94.98:46317
+// http://137.74.109.229:3128
+
+let userAgent = userAgents[parseInt(Math.random() * userAgents.length)];
+
 const headerConfig = {
   "Content-Type": "text/plain",
-  "User-Agent":
-    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
+  "User-Agent": userAgent
 };
 
 const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) => {
@@ -18,6 +55,7 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
     try {
       const RequestHTML = await superagent
         .get(url)
+        .proxy(proxy)
         .set(headerConfig)
         .timeout(5000);
       const $ = cheerio.load(RequestHTML.text);
@@ -36,6 +74,7 @@ const getWebSiteContent = async (url, forumCode, page, totalCode, outputPath) =>
     try {
       const RequestHTML = await superagent
         .get(url)
+        .proxy(proxy)
         .set(headerConfig)
         .timeout(5000);
       const $ = cheerio.load(RequestHTML.text);
@@ -91,4 +130,4 @@ const startCrawler = async (forum, startPage, totalCode) => {
   });
 };
 
-startCrawler(116, 51, 369);
+startCrawler(116, 243, 369);
