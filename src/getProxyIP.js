@@ -25,7 +25,12 @@ const requestProxyIp = () => {
           .children("td:nth-child(2)")
           .text();
 
-        IP_proxy_RequestList.push(`${IP_http}://${IP_url}:${IP_port}`);
+        const ip = `${IP_http}://${IP_url}:${IP_port}`;
+        const lastChecked = $(value)
+          .children("td:nth-child(8)")
+          .text();
+
+        IP_proxy_RequestList.push({ ip, lastChecked });
       });
 
       return IP_proxy_RequestList;
@@ -43,13 +48,13 @@ const requestProxyIp = () => {
           try {
             const testIp = await superagent
               .get("https://www.google.com.tw")
-              .proxy(itemLink)
+              .proxy(itemLink.ip)
               .timeout(5000);
-            if (testIp.status == 200) {
-              resultList.push(itemLink);
+            if (testIp.status == 200 && itemLink.lastChecked.includes("minutes ago")) {
+              resultList.push(itemLink.ip);
             }
           } catch (error) {}
-          writeFileAsync("./ip.json", resultList);
+          await writeFileAsync("./ip.json", resultList);
         })
       );
     });
