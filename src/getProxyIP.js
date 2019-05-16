@@ -51,6 +51,7 @@ const requestProxyIp = () => {
               .proxy(itemLink.ip)
               .timeout(5000);
             if (testIp.status == 200 && itemLink.lastChecked.includes("minutes ago")) {
+              console.log(itemLink.lastChecked, "  -->", itemLink.ip);
               resultList.push(itemLink.ip);
             }
           } catch (error) {}

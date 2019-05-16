@@ -38,9 +38,8 @@ const getWebSiteContent = async (url, proxy, forumCode, page, outputPath) => {
 
       return pageLinkList;
     } catch (error) {
-      console.log("try other proxy ip", ip);
-      getWebSitePageUrl(ip);
-      //console.log("TCL: getWebSitePageUrl -> error", error);
+      // console.log("try other proxy ip", ip);
+      // getWebSitePageUrl(ip);
     }
   };
 
@@ -69,13 +68,13 @@ const getWebSiteContent = async (url, proxy, forumCode, page, outputPath) => {
     } catch (error) {}
   };
 
-  const ip = await getProxyIPs();
+  const ip_random = await getProxyIPs();
   Promise.resolve()
-    .then(() => getWebSitePageUrl(ip))
+    .then(() => getWebSitePageUrl(ip_random))
     .then(() => {
       Promise.all(
         pageLinkList.map(async item => {
-          await RequestDataAsync(item.link, ip, item.page, outputPath);
+          await RequestDataAsync(item.link, ip_random, item.page, outputPath);
           return item.page;
         })
       ).then(page => console.log("第", page[0], "頁 Time:", new Date().toTimeString().split(" ")[0]));
@@ -83,10 +82,12 @@ const getWebSiteContent = async (url, proxy, forumCode, page, outputPath) => {
 };
 
 const startCrawler = async (forum, startPage, totalCode) => {
+  //const outputPath = `./output/${forum}_${Math.floor(Math.random() * (99 - 10 + 1)) + 10}.json`;
   const outputPath = `./output/${forum}.json`;
   writeFileAsync(outputPath, []);
 
   const ip = await getProxyIPs();
+  console.log("start proxy ip", ip);
   const list = [];
   for (let i = startPage; i <= totalCode; i++) list.push(i);
 
@@ -98,7 +99,7 @@ const startCrawler = async (forum, startPage, totalCode) => {
       pages,
       outputPath
     );
-    // await waitFor(Math.floor(Math.random() * (540000 - 300000 + 1) + 300000));
+    //await waitFor(Math.floor(Math.random() * (540000 - 300000 + 1) + 300000));
     await waitFor(5000);
   });
 };
