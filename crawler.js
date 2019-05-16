@@ -6,7 +6,6 @@ superagentProxy(superagent);
 import { exportResults, readFileAsync, writeFileAsync } from "./src/fs_process";
 import { asyncForEach, waitFor } from "./src/delay";
 import userAgents from "./src/userAgents";
-import requestNewProxy from "./src/getProxyIP";
 
 const headerConfig = {
   "Content-Type": "text/plain",
@@ -20,65 +19,51 @@ const getProxyIPs = async () => {
   return proxy;
 };
 
-const getWebSiteContent = async (url, proxy, forumCode, page, outputPath) => {
-  const pageLinkList = [];
-  const getWebSitePageUrl = async ip => {
-    try {
-      const RequestHTML = await superagent
-        .get(url)
-        .proxy(proxy)
-        .set(headerConfig)
-        .timeout(5000);
-      const $ = cheerio.load(RequestHTML.text);
-      const forum_num = `#threadbits_forum_${forumCode}`;
+const RequestDataAsync = async (url, proxy, page, outputPath) => {
+  const crawlerResultList = [];
+  try {
+    const RequestHTML = await superagent
+      .get(url)
+      .proxy(proxy)
+      .set(headerConfig)
+      .timeout(5000);
+    const $ = cheerio.load(RequestHTML.text);
 
-      $(`${forum_num} > tr > td:nth-child(2) > div > a`).each((index, value) => {
-        pageLinkList.push({ link: `https://www.backpackers.com.tw/forum/${$(value).attr("href")}`, page });
-      });
+    const table_td = `div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td`;
 
-      return pageLinkList;
-    } catch (error) {
-      // console.log("try other proxy ip", ip);
-      // getWebSitePageUrl(ip);
-    }
-  };
+    const title = $(`${table_td} > div:nth-child(2) > strong`).text();
+    const content = $(`${table_td} > .vb_postbit`).text();
 
-  const RequestDataAsync = async (url, ip, page, outputPath) => {
-    const crawlerResultList = [];
-    try {
-      const RequestHTML = await superagent
-        .get(url)
-        .proxy(ip)
-        .set(headerConfig)
-        .timeout(5000);
-      const $ = cheerio.load(RequestHTML.text);
-
-      const table_td = `div:nth-child(1) > div:nth-child(2) > table > tbody > tr:nth-child(2) > td`;
-
-      const title = $(`${table_td} > div:nth-child(2) > strong`).text();
-      const content = $(`${table_td} > .vb_postbit`).text();
-
-      await crawlerResultList.push({
-        article_title: title.replace(new RegExp("\n", "g"), ""),
-        content: content.replace(new RegExp("\n", "g"), ""),
-        page: `第${page}頁`
-      });
-
-      await exportResults(crawlerResultList, outputPath);
-    } catch (error) {}
-  };
-
-  const ip_random = await getProxyIPs();
-  Promise.resolve()
-    .then(() => getWebSitePageUrl(ip_random))
-    .then(() => {
-      Promise.all(
-        pageLinkList.map(async item => {
-          await RequestDataAsync(item.link, ip_random, item.page, outputPath);
-          return item.page;
-        })
-      ).then(page => console.log("第", page[0], "頁 Time:", new Date().toTimeString().split(" ")[0]));
+    await crawlerResultList.push({
+      article_title: title.replace(new RegExp("\n", "g"), ""),
+      content: content.replace(new RegExp("\n", "g"), ""),
+      page: `第${page}頁`
     });
+
+    await exportResults(crawlerResultList, outputPath);
+  } catch (error) {}
+};
+
+const getWebSitePageUrl = async (url, proxy, forumCode, page) => {
+  const pageLinkList = [];
+  try {
+    const RequestHTML = await superagent
+      .get(url)
+      .proxy(proxy)
+      .set(headerConfig)
+      .timeout(5000);
+    const $ = cheerio.load(RequestHTML.text);
+    const forum_num = `#threadbits_forum_${forumCode}`;
+
+    $(`${forum_num} > tr > td:nth-child(2) > div > a`).each((index, value) => {
+      pageLinkList.push({ link: `https://www.backpackers.com.tw/forum/${$(value).attr("href")}`, page });
+    });
+
+    return pageLinkList;
+  } catch (error) {
+    console.log("getWebSitePageUrl error");
+    return "error";
+  }
 };
 
 const startCrawler = async (forum, startPage, totalCode) => {
@@ -86,19 +71,28 @@ const startCrawler = async (forum, startPage, totalCode) => {
   const outputPath = `./output/${forum}.json`;
   writeFileAsync(outputPath, []);
 
-  const ip = await getProxyIPs();
-  console.log("start proxy ip", ip);
   const list = [];
   for (let i = startPage; i <= totalCode; i++) list.push(i);
 
+  let proxy_ip = await getProxyIPs();
+
   await asyncForEach(list, async pages => {
-    await getWebSiteContent(
-      `https://www.backpackers.com.tw/forum/forumdisplay.php?f=${forum}&order=desc&page=${pages}`,
-      ip,
-      forum,
-      pages,
-      outputPath
-    );
+    let url = `https://www.backpackers.com.tw/forum/forumdisplay.php?f=${forum}&order=desc&page=${pages}`;
+
+    console.log("start proxy ip", proxy_ip);
+
+    await getWebSitePageUrl(url, proxy_ip, forum, pages).then(UrlList => {
+      if (typeof UrlList == "string") {
+      } else {
+        Promise.all(
+          UrlList.map(async item => {
+            await RequestDataAsync(item.link, proxy_ip, item.page, outputPath);
+            return item.page;
+          })
+        ).then(page => console.log("第", page[0], "頁 Time:", new Date().toTimeString().split(" ")[0]));
+      }
+    });
+
     //await waitFor(Math.floor(Math.random() * (540000 - 300000 + 1) + 300000));
     await waitFor(5000);
   });
